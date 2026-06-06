@@ -1,22 +1,23 @@
 """
 Inference pipeline for financial sentiment classification.
-Loads fine-tuned DistilBERT and runs predictions on new text.
+Loads fine-tuned DistilBERT from HuggingFace Hub at runtime.
 """
 
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 import torch.nn.functional as F
 
-MODEL_PATH = "models/sentiment"
-
+HF_MODEL_ID = "fahadamjad009/nlp1-financial-sentiment"
 LABEL_MAP = {0: "bearish", 1: "neutral", 2: "bullish"}
 EMOJI_MAP = {0: "🔴", 1: "🟡", 2: "🟢"}
 
 
-def load_model(model_path=MODEL_PATH):
-    """Load fine-tuned model and tokenizer."""
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
-    model = AutoModelForSequenceClassification.from_pretrained(model_path)
+def load_model(model_path=None):
+    """Load fine-tuned model from HuggingFace Hub."""
+    source = model_path if model_path else HF_MODEL_ID
+    print(f"Loading model from {source}...")
+    tokenizer = AutoTokenizer.from_pretrained(source)
+    model = AutoModelForSequenceClassification.from_pretrained(source)
     model.eval()
     return tokenizer, model
 
@@ -54,18 +55,14 @@ def predict_batch(texts, tokenizer, model):
 
 
 if __name__ == "__main__":
-    print("Loading model...")
     tokenizer, model = load_model()
-
     test_headlines = [
         "Apple beats earnings expectations, stock surges 8%",
         "Fed raises interest rates amid inflation concerns",
         "Tesla misses delivery targets for third consecutive quarter",
     ]
-
     print("\n--- Inference Test ---")
     for headline in test_headlines:
         result = predict(headline, tokenizer, model)
         print(f"\n{result['emoji']} {result['label'].upper()} ({result['confidence']:.1%})")
         print(f"   {headline}")
-        print(f"   Scores: {result['scores']}")
